@@ -48,6 +48,7 @@ namespace ITHelpDesk.Infrastructure.Services
             // 4. Return the response DTO
             return new LoginResponseDto
             {
+                Id=user.Id,
                 token = token,
                 FullName = user.FullName,
                 Email = user.Email,
