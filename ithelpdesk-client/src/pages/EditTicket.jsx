@@ -13,7 +13,8 @@ function EditTicket() {
   const [categoryId, setCategoryId] = useState("");
   const [priorityId, setPriorityId] = useState("");
   const [statusId, setStatusId] = useState("");
-
+  const [assignedTo, setAssignedTo] = useState(null);
+   
   const [categories, setCategories] = useState([]);
   const [priorities, setPriorities] = useState([]);
   const [statuses, setStatuses] = useState([]);
@@ -39,6 +40,7 @@ function EditTicket() {
         setCategories(catRes.data);
         setPriorities(priRes.data);
         setStatuses(statusRes.data);
+        setAssignedTo(ticket.assignedToId ?? null);
 
         // Match names back to IDs for the dropdowns
         const matchedCategory = catRes.data.find(c => c.categoryName === ticket.categoryName);
@@ -71,7 +73,7 @@ function EditTicket() {
           categoryId: parseInt(categoryId),
           priorityId: parseInt(priorityId),
           statusId: parseInt(statusId),
-          assignedTo: null,
+          assignedTo: assignedTo,
         },
         {
           headers: { Authorization: `Bearer ${token}` },

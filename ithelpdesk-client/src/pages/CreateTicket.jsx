@@ -132,9 +132,9 @@ function CreateTicket() {
         {error && <p style={{ color: "red" }}>{error}</p>}
 
         <button type="submit">Create Ticket</button>
-        <button type="button" onClick={() => navigate("/tickets")} style={{ marginLeft: "10px" }}>
-          Cancel
-        </button>
+        <button type="button" className="secondary" onClick={() => navigate("/tickets")} style={{ marginLeft: "10px" }}>
+  Cancel
+</button>
       </form>
     </div>
   );

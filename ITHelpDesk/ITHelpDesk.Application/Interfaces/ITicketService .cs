@@ -12,7 +12,10 @@ namespace ITHelpDesk.Application.Interfaces
         Task<List<TicketResponseDto>> GetAllTicketsAsync(int userId, string role);
         Task<TicketResponseDto?> GetTicketByIdAsync(int id);
         Task<TicketResponseDto> CreateTicketAsync(CreateTicketDto request);
-        Task<TicketResponseDto?> UpdateTicketAsync(int id, UpdateTicketDto request,string role );
+        Task<TicketResponseDto?> UpdateTicketAsync(int id, UpdateTicketDto request,string role,int userid );
         Task<bool> DeleteTicketAsync(int id);
+        Task<TicketResponseDto?> SelfAssignTicketAsync(int ticketId, int userId, string role);
+        Task<TicketResponseDto?> AssignTicketAsync(int ticketId, int agentId, int performedByUserId, string performedByRole);
+
     }
 }

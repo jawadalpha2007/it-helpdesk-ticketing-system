@@ -14,8 +14,11 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSet
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<ILookupService, LookupService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+
 var secretKey = jwtSettings["SecretKey"];
+builder.Services.AddScoped<ICommentService, CommentService>();
 
 builder.Services.AddAuthentication(options =>
 {

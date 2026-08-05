@@ -19,6 +19,8 @@ namespace ITHelpDesk.Application.DTOs
 
         public string CreatedByName { get; set; } = string.Empty;
         public string? AssignedToName { get; set; }
+        public int? AssignedToId { get; set; }
+        public double? ResolutionTimeHours { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

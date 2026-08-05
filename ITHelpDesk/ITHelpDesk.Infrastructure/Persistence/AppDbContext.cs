@@ -21,7 +21,8 @@ namespace ITHelpDesk.Infrastructure.Persistence
         public DbSet<Priority> Priorities { get; set; }
         public DbSet<Status> Statuses { get; set; }
         public DbSet<Ticket> Tickets { get; set; }
-
+        public DbSet<TicketComment> TicketComments { get; set; }
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Map C# PascalCase properties to your actual SQL camelCase columns
@@ -106,6 +107,41 @@ namespace ITHelpDesk.Infrastructure.Persistence
                 entity.HasOne(t => t.AssignedToUser)
                       .WithMany()
                       .HasForeignKey(t => t.AssignedTo)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<TicketComment>(entity =>
+            {
+                entity.ToTable("TicketComments");
+                entity.Property(c => c.Id).HasColumnName("id");
+                entity.Property(c => c.TicketId).HasColumnName("ticketId");
+                entity.Property(c => c.UserId).HasColumnName("userId");
+                entity.Property(c => c.CommentText).HasColumnName("commentText");
+                entity.Property(c => c.IsInternal).HasColumnName("isInternal");
+                entity.Property(c => c.CreatedAt).HasColumnName("createdAt");
+
+                entity.HasOne(c => c.Ticket)
+                      .WithMany()
+                      .HasForeignKey(c => c.TicketId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.User)
+                      .WithMany()
+                      .HasForeignKey(c => c.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<ActivityLog>(entity =>
+            {
+                entity.ToTable("ActivityLogs");
+                entity.Property(a => a.Id).HasColumnName("id");
+                entity.Property(a => a.UserId).HasColumnName("userId");
+                entity.Property(a => a.Action).HasColumnName("action");
+                entity.Property(a => a.EntityType).HasColumnName("entityType");
+                entity.Property(a => a.EntityId).HasColumnName("entityId");
+                entity.Property(a => a.CreatedAt).HasColumnName("createdAt");
+
+                entity.HasOne(a => a.User)
+                      .WithMany()
+                      .HasForeignKey(a => a.UserId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
         }

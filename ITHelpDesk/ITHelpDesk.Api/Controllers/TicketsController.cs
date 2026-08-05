@@ -37,26 +37,32 @@ namespace ITHelpDesk.Api.Controllers
 
             return Ok(ticket);
         }
-
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateTicketDto request)
-        {
-            var createdTicket = await _ticketService.CreateTicketAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = createdTicket.Id }, createdTicket);
-        }
+public async Task<IActionResult> Create([FromBody] CreateTicketDto request)
+{
+    var role = User.FindFirst(ClaimTypes.Role)!.Value;
 
+    if (role != "Employee" && role != "Admin")
+        return Forbid();
+
+    var createdTicket = await _ticketService.CreateTicketAsync(request);
+    return CreatedAtAction(nameof(GetById), new { id = createdTicket.Id }, createdTicket);
+}
+      
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTicketDto request)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             var role = User.FindFirst(ClaimTypes.Role)!.Value;
 
-            var updatedTicket = await _ticketService.UpdateTicketAsync(id, request,role);
+            var updatedTicket = await _ticketService.UpdateTicketAsync(id, request, role, userId);
 
             if (updatedTicket == null)
                 return NotFound(new { message = "Ticket not found." });
 
             return Ok(updatedTicket);
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
@@ -67,6 +73,59 @@ namespace ITHelpDesk.Api.Controllers
                 return NotFound(new { message = "Ticket not found." });
 
             return NoContent();
+        }
+        [HttpGet("{id}/logs")]
+        public async Task<IActionResult> GetLogs(int id, [FromServices] IActivityLogService activityLogService)
+        {
+            var logs = await activityLogService.GetLogsForEntityAsync("Ticket", id);
+            return Ok(logs);
+        }
+        [HttpPost("{id}/self-assign")]
+        public async Task<IActionResult> SelfAssign(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var role = User.FindFirst(ClaimTypes.Role)!.Value;
+
+            try
+            {
+                var ticket = await _ticketService.SelfAssignTicketAsync(id, userId, role);
+                if (ticket == null)
+                    return NotFound(new { message = "Ticket not found." });
+
+                return Ok(ticket);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/assign")]
+        public async Task<IActionResult> AssignTicket(int id, [FromBody] AssignTicketDto request)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var role = User.FindFirst(ClaimTypes.Role)!.Value;
+
+            try
+            {
+                var ticket = await _ticketService.AssignTicketAsync(id, request.AgentId, userId, role);
+                if (ticket == null)
+                    return NotFound(new { message = "Ticket not found." });
+
+                return Ok(ticket);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
     }
