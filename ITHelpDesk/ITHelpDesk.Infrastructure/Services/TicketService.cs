@@ -15,11 +15,12 @@ namespace ITHelpDesk.Infrastructure.Services
     {
         private readonly AppDbContext _context;
         private readonly IActivityLogService _activityLogService;
-
-        public TicketService(AppDbContext context, IActivityLogService activityLogService)
+        private readonly INotificationService _notificationService;
+        public TicketService(AppDbContext context, IActivityLogService activityLogService, INotificationService notificationService)
         {
             _context = context;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
         public async Task<List<TicketResponseDto>> GetAllTicketsAsync(int userId, string role)
         {
@@ -129,7 +130,23 @@ namespace ITHelpDesk.Infrastructure.Services
                     ticket.Id
                 );
             }
+            if (oldStatusId != ticket.StatusId)
+            {
+                var statusName = await _context.Statuses.FirstOrDefaultAsync(s => s.Id == ticket.StatusId);
+                await _activityLogService.LogActionAsync(
+                    userId,
+                    $"Status changed to {statusName?.StatusName ?? "Unknown"}",
+                    "Ticket",
+                    ticket.Id
+                );
 
+                // Notify the ticket creator that their ticket's status changed
+                await _notificationService.CreateNotificationAsync(
+                    ticket.CreatedBy,
+                    $"Your ticket \"{ticket.Title}\" status changed to {statusName?.StatusName ?? "Unknown"}.",
+                    ticket.Id
+                );
+            }
             return await GetTicketByIdAsync(ticket.Id);
         }
 
@@ -180,6 +197,7 @@ namespace ITHelpDesk.Infrastructure.Services
                 AssignedToId = ticket.AssignedTo,
                 ResolutionTimeHours = resolutionHours
 
+
             };
         }
 
@@ -203,7 +221,11 @@ namespace ITHelpDesk.Infrastructure.Services
             await _context.SaveChangesAsync();
 
             await _activityLogService.LogActionAsync(userId, "Self-assigned ticket", "Ticket", ticket.Id);
-
+            await _notificationService.CreateNotificationAsync(
+    ticket.CreatedBy,
+    $"Your ticket \"{ticket.Title}\" has been picked up by an agent.",
+    ticket.Id
+);
             return await GetTicketByIdAsync(ticket.Id);
         }
 
@@ -233,6 +255,12 @@ namespace ITHelpDesk.Infrastructure.Services
                 "Ticket",
                 ticket.Id
             );
+            await _notificationService.CreateNotificationAsync(
+    agentId,
+    $"You've been assigned ticket \"{ticket.Title}\".",
+    ticket.Id
+);
+
 
             return await GetTicketByIdAsync(ticket.Id);
         }

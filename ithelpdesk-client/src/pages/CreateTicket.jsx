@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 
@@ -7,6 +7,7 @@ function CreateTicket() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [priorityId, setPriorityId] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const [categories, setCategories] = useState([]);
   const [priorities, setPriorities] = useState([]);
@@ -43,7 +44,7 @@ function CreateTicket() {
     try {
       const userId = parseInt(localStorage.getItem("userId"));
 
-      await api.post(
+      const response = await api.post(
         "/Tickets",
         {
           title: title,
@@ -52,12 +53,24 @@ function CreateTicket() {
           priorityId: parseInt(priorityId),
           createdBy: userId,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      navigate("/tickets");
+      const newTicketId = response.data.id;
+
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        await api.post(`/Tickets/${newTicketId}/attachments`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      }
+
+      navigate(`/tickets/${newTicketId}`);
     } catch (err) {
       setError("Failed to create ticket. Please check your input.");
     }
@@ -129,12 +142,19 @@ function CreateTicket() {
         </div>
         <br />
 
+        <div>
+          <label>Attach a file (optional)</label>
+          <br />
+          <input type="file" onChange={(e) => setSelectedFile(e.target.files[0])} />
+        </div>
+        <br />
+
         {error && <p style={{ color: "red" }}>{error}</p>}
 
         <button type="submit">Create Ticket</button>
         <button type="button" className="secondary" onClick={() => navigate("/tickets")} style={{ marginLeft: "10px" }}>
-  Cancel
-</button>
+          Cancel
+        </button>
       </form>
     </div>
   );

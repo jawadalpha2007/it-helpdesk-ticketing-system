@@ -127,6 +127,28 @@ public async Task<IActionResult> Create([FromBody] CreateTicketDto request)
                 return BadRequest(new { message = ex.Message });
             }
         }
+        [HttpPost("{id}/attachments")]
+        public async Task<IActionResult> UploadAttachment(int id, IFormFile file, [FromServices] IAttachmentService attachmentService)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            try
+            {
+                var attachment = await attachmentService.UploadAttachmentAsync(id, userId, file);
+                return Ok(attachment);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/attachments")]
+        public async Task<IActionResult> GetAttachments(int id, [FromServices] IAttachmentService attachmentService)
+        {
+            var attachments = await attachmentService.GetAttachmentsForTicketAsync(id);
+            return Ok(attachments);
+        }
 
     }
 }

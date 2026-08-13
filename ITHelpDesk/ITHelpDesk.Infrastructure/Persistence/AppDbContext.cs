@@ -23,6 +23,8 @@ namespace ITHelpDesk.Infrastructure.Persistence
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<TicketComment> TicketComments { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
+        public DbSet<TicketAttachment> TicketAttachments { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Map C# PascalCase properties to your actual SQL camelCase columns
@@ -143,6 +145,48 @@ namespace ITHelpDesk.Infrastructure.Persistence
                       .WithMany()
                       .HasForeignKey(a => a.UserId)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<TicketAttachment>(entity =>
+            {
+                entity.ToTable("TicketAttachments");
+                entity.Property(a => a.Id).HasColumnName("id");
+                entity.Property(a => a.TicketId).HasColumnName("ticketId");
+                entity.Property(a => a.UploadedBy).HasColumnName("uploadedBy");
+                entity.Property(a => a.FileName).HasColumnName("fileName");
+                entity.Property(a => a.FilePath).HasColumnName("filePath");
+                entity.Property(a => a.FileSize).HasColumnName("fileSize");
+                entity.Property(a => a.FileType).HasColumnName("fileType");
+                entity.Property(a => a.UploadedAt).HasColumnName("uploadedAt");
+
+                entity.HasOne(a => a.Ticket)
+                      .WithMany()
+                      .HasForeignKey(a => a.TicketId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.UploadedByUser)
+                      .WithMany()
+                      .HasForeignKey(a => a.UploadedBy)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.ToTable("Notifications");
+                entity.Property(n => n.Id).HasColumnName("id");
+                entity.Property(n => n.UserId).HasColumnName("userId");
+                entity.Property(n => n.TicketId).HasColumnName("ticketId");
+                entity.Property(n => n.Message).HasColumnName("message");
+                entity.Property(n => n.IsRead).HasColumnName("isRead");
+                entity.Property(n => n.CreatedAt).HasColumnName("createdAt");
+
+                entity.HasOne(n => n.User)
+                      .WithMany()
+                      .HasForeignKey(n => n.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(n => n.Ticket)
+                      .WithMany()
+                      .HasForeignKey(n => n.TicketId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

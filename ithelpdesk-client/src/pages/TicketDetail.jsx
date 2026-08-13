@@ -29,6 +29,9 @@ function TicketDetail() {
   const [logs, setLogs] = useState([]);
   const [agents, setAgents] = useState([]);
   const [selectedAgent, setSelectedAgent] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [commentFile, setCommentFile] = useState(null);
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -38,6 +41,7 @@ function TicketDetail() {
         api.get(`/Tickets/${id}`, { headers }),
         api.get(`/tickets/${id}/comments`, { headers }),
         api.get(`/Tickets/${id}/logs`, { headers }),
+        api.get(`/Tickets/${id}/attachments`, { headers }),
       ];
 
       if (role === "Manager" || role === "Admin") {
@@ -49,9 +53,11 @@ function TicketDetail() {
       setTicket(results[0].data);
       setComments(results[1].data);
       setLogs(results[2].data);
+      setAttachments(results[3].data);
 
-      if (results[3]) {
-        setAgents(results[3].data);
+
+      if (results[4]) {
+        setAgents(results[4].data);
       }
     } catch (err) {
       setError("Failed to load ticket details.");
@@ -64,23 +70,34 @@ function TicketDetail() {
     fetchData();
   }, [id]);
 
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
+   const handleAddComment = async (e) => {
+  e.preventDefault();
+  if (!newComment.trim()) return;
 
-    try {
-      await api.post(
-        `/tickets/${id}/comments`,
-        { commentText: newComment, isInternal: isInternal },
-        { headers }
-      );
-      setNewComment("");
-      setIsInternal(false);
-      fetchData();
-    } catch (err) {
-      setError("Failed to post comment.");
+  try {
+    await api.post(
+      `/tickets/${id}/comments`,
+      { commentText: newComment, isInternal: isInternal },
+      { headers }
+    );
+
+    if (commentFile) {
+      const formData = new FormData();
+      formData.append("file", commentFile);
+
+      await api.post(`/Tickets/${id}/attachments`, formData, {
+        headers: { ...headers, "Content-Type": "multipart/form-data" },
+      });
     }
-  };
+
+    setNewComment("");
+    setIsInternal(false);
+    setCommentFile(null);
+    fetchData();
+  } catch (err) {
+    setError("Failed to post comment.");
+  }
+};
 
   const handleSelfAssign = async () => {
     try {
@@ -107,6 +124,23 @@ function TicketDetail() {
       alert(err.response?.data?.message || "Failed to assign ticket.");
     }
   };
+  const handleFileUpload = async (e) => {
+  e.preventDefault();
+  if (!selectedFile) return;
+
+  const formData = new FormData();
+  formData.append("file", selectedFile);
+
+  try {
+    await api.post(`/Tickets/${id}/attachments`, formData, {
+      headers: { ...headers, "Content-Type": "multipart/form-data" },
+    });
+    setSelectedFile(null);
+    fetchData();
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to upload file.");
+  }
+};
 
   if (loading) return <p className="container">Loading...</p>;
   if (error) return <p className="container error-text">{error}</p>;
@@ -187,7 +221,28 @@ function TicketDetail() {
           </form>
         </div>
       )}
+    <h3 className="section-title">Attachments</h3>
+{attachments.length === 0 ? (
+  <p>No attachments yet.</p>
+) : (
+  <ul>
+    {attachments.map((a) => (
+      <li key={a.id}>
+        <a href={`https://localhost:7082${a.filePath}`} target="_blank" rel="noreferrer">
+          {a.fileName}
+        </a>{" "}
+        <span className="comment-meta">
+          ({(a.fileSize / 1024).toFixed(1)} KB) — uploaded by {a.uploadedByName}
+        </span>
+      </li>
+    ))}
+  </ul>
+)}
 
+<form onSubmit={handleFileUpload} style={{ marginTop: "8px" }}>
+  <input type="file" onChange={(e) => setSelectedFile(e.target.files[0])} />
+  <button type="submit" style={{ marginLeft: "8px" }}>Upload</button>
+</form>
       <h3 className="section-title">Comments</h3>
       {comments.length === 0 ? (
         <p>No comments yet.</p>
@@ -203,6 +258,11 @@ function TicketDetail() {
           </div>
         ))
       )}
+      <div style={{ margin: "8px 0" }}>
+  <label>Attach a file (optional)</label>
+  <br />
+  <input type="file" onChange={(e) => setCommentFile(e.target.files[0])} />
+</div>
 
       <form onSubmit={handleAddComment} style={{ marginTop: "16px" }}>
         <textarea

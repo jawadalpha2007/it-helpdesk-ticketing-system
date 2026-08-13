@@ -10,10 +10,11 @@ namespace ITHelpDesk.Infrastructure.Services
     public class CommentService : ICommentService
     {
         private readonly AppDbContext _context;
-
-        public CommentService(AppDbContext context)
+        private readonly INotificationService _notificationService;
+        public CommentService(AppDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         public async Task<List<CommentResponseDto>> GetCommentsForTicketAsync(int ticketId, string role)
@@ -59,6 +60,22 @@ namespace ITHelpDesk.Infrastructure.Services
 
             _context.TicketComments.Add(comment);
             await _context.SaveChangesAsync();
+            _context.TicketComments.Add(comment);
+            await _context.SaveChangesAsync();
+
+            // Notify the ticket creator, unless it's an internal note or they wrote it themselves
+            if (!isInternal)
+            {
+                var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId);
+                if (ticket != null && ticket.CreatedBy != userId)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        ticket.CreatedBy,
+                        $"New reply on your ticket \"{ticket.Title}\".",
+                        ticketId
+                    );
+                }
+            }
 
             // Reload with the User included so we can return the author's name
             var savedComment = await _context.TicketComments

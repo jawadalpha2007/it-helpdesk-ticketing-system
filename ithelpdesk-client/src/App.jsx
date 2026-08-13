@@ -5,6 +5,7 @@ import Tickets from "./pages/Tickets";
 import CreateTicket from "./pages/CreateTicket";
 import EditTicket from "./pages/EditTicket";
 import TicketDetail from "./pages/TicketDetail";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/tickets/edit/:id" element={<EditTicket />} />
         <Route path="/tickets/:id" element={<TicketDetail />} />
         <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   );

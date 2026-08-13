@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+ import { useNavigate } from "react-router-dom";
+import NotificationBell from "./NotificationBell";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -13,14 +14,21 @@ function Navbar() {
     navigate("/login");
   };
 
-  if (!fullName) return null; // don't show navbar if not logged in
+  if (!fullName) return null;
 
   return (
     <div className="navbar">
       <h1>IT Help Desk</h1>
-      <div className="user-info">
-        Welcome, {fullName} ({role})
-        <button className="secondary" onClick={handleLogout} style={{ marginLeft: "16px" }}>
+      <div className="user-info" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <span>Welcome, {fullName} ({role})</span>
+
+        <NotificationBell />
+
+        <button className="secondary" onClick={() => navigate("/dashboard")}>
+          Dashboard
+        </button>
+
+        <button className="secondary" onClick={handleLogout}>
           Logout
         </button>
       </div>
